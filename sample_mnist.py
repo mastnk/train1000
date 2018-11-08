@@ -5,99 +5,79 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 
 from keras.models import Sequential
-from keras.layers import Flatten, Dense
+from keras.layers import Flatten, Dense, Dropout
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
+from keras.regularizers import l2
 
 import numpy as np
 
-
-
-i = 0
-title, ext = os.path.splitext(sys.argv[i]); i+=1
-act = sys.argv[i]; i+=1
-batch_size = int(sys.argv[i]); i+=1
-soft_positive = float(sys.argv[i]); i+=1
-truncated_th = float(sys.argv[i]); i+=1
-
-filetitle = '{title}_{act}_{batch_size:04d}_{soft_positive:04.2f}_{truncated_th:04.2f}'.format(title=title, act=act, batch_size=batch_size, soft_positive=soft_positive, truncated_th=truncated_th)
-
-nb_per_class = 100
-nb_updates = 1000
-
-
-##### data #####
-(x_train, y_train), (x_test, y_test) = data.mnist()
-(x_train, y_train) = data.extract( x_train, y_train, nb_per_class )
-
-x_train = x_train.reshape( ( x_train.shape[0], x_train.shape[1]*x_train.shape[2] ) )
-x_test = x_test.reshape( ( x_test.shape[0], x_test.shape[1]*x_test.shape[2] ) )
-
+import activation
 
 ##### model #####
-nb_classes = 10
-Wl2 = 0
-dropout = 0
-nb_features = 512
-model = mnist_model.shallow( nb_classes=nb_classes, Wl2=Wl2, dropout=dropout, nb_features=nb_features, activation=act )
-
-tsce = soft.truncated_soft_crossentropy( truncated_th = truncated_th, soft_positive = soft_positive, nb_classes = nb_classes )
-loss = tsce.K_truncated_soft_crossentropy
-
-'''
-if( truncated_th == 1.0 and soft_positive == 1.0 ):
-	loss = 'categorical_crossentropy'
-else:
-	loss = tsce.K_truncated_soft_crossentropy
-'''
-
-#opt = SGD(lr=1, momentum=0.5)
-opt = SGD(lr=1, momentum=0.9)
-#opt = SGD(lr=1, momentum=0.0)
-model.compile(loss=loss, optimizer=opt, metrics=['categorical_crossentropy', 'accuracy'])
-
-##### train #####
-gen = data.gen_sample( x_train, y_train, batch_size )
-#gen = data.gen_choices( x_train, y_train, batch_size )
-#gen = data.gen( x_train, y_train, batch_size )
-
-flog = open( filetitle+'.csv', 'w' )
-
-line = 'i, hce, acc, val_hce, val_acc'
-print( line )
-flog.write( line+'\n' )
-flog.flush()
-
-for i in range(nb_updates):
-
-
-	x, y = gen.__next__()
-
-	y_train_pred = model.predict( x_train )
-	y_test_pred = model.predict( x_test )
-
-	hce = data.np_crossentropy( y_train, y_train_pred )
-	acc = data.np_accuracy( y_train, y_train_pred )
-	val_hce = data.np_crossentropy( y_test, y_test_pred )
-	val_acc = data.np_accuracy( y_test, y_test_pred )
+def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, act_func='relu', nb_classes = 10, input_shape = (28,28,1) ):
+	model = Sequential()
 	
-	'''
-	eva = model.evaluate( x=x_train, y=y_train, verbose=0 )
-	hce = eva[1]
-	acc = eva[2]
+	model.add( Flatten( input_shape=input_shape ) )
+	for i in range(nb_layers-1):
+		model.add( Dense( nb_features, kernel_regularizer=l2(Wl2) ) )
+		model.add( activation.afterDense( act_func, nb_features ) )
+		
+	if( dropout > 0 ):
+		model.add( Dropout(dropout) )
 
-	eva = model.evaluate( x=x_test, y=y_test, verbose=0 )
-	val_hce = eva[1]
-	val_acc = eva[2]
-	'''
+	model.add( Dense( nb_classes, activation='softmax', kernel_regularizer=l2(Wl2) ) )
+	return model
+
+##### generator #####
+def build_generator( X_train, Y_train, batch_size, gen = None ):
+	if( gen == None ):
+		gen = ImageDataGenerator(width_shift_range=0.5, height_shift_range=0.5, zoom_range=[0.98, 1.02], shear_range=3.14/180*0.1)
+	gen.fit(X_train)
+	flow = gen.flow(X_train, Y_train, batch_size=batch_size)
+	while(True):
+		X, Y = flow.__next__()
+		if( X.shape[0] == batch_size ):
+			yield X, Y
+
+if( __name__ == '__main__' ):
+	from keras.callbacks import CSVLogger, ModelCheckpoint
+	from keras.optimizers import Adam
+	from keras.models import load_model
+	import train1000
+	import os
+
+	epochs = 100
+	steps_per_epoch = 100
 	
-	line = '{i}, {hce}, {acc}, {val_hce}, {val_acc}'.format(i=i, hce=hce, acc=acc, val_hce=val_hce, val_acc=val_acc)
-	print( line )
-	flog.write( line+'\n' )
-	flog.flush()
+	batch_size = 100
 	
-	model.train_on_batch( x, y )
+	nb_layers = 5
+	nb_features = 128
+	dropout = 0.5
+	Wl2 = 1E-6
 
-flog.close()
-model.save_weights(filetitle+'.hdf5')
+	(X_train, Y_train), (X_test, Y_test) = train1000.mnist()
+	
+	if( not os.path.exists( 'sample_mnist.hdf5' ) ):
+		model = build_model( nb_layers = nb_layers, dropout = dropout, nb_features = nb_features, Wl2=Wl2 )
+		model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['categorical_crossentropy', 'accuracy'])
 
+		gen = build_generator( X_train, Y_train, batch_size )
+
+		callbacks = [ModelCheckpoint('sample_mnist.hdf5', monitor='val_categorical_crossentropy', verbose=1, save_best_only=True, mode='min'), CSVLogger('sample_mnist.csv')]
+		model.fit_generator( gen, steps_per_epoch=steps_per_epoch, epochs=epochs, verbose=1, callbacks=callbacks, validation_data=(X_train, Y_train) )
+	
+	model = load_model( 'sample_mnist.hdf5', custom_objects = activation.custom_objects )
+	
+	print( 'train data:' )
+	eva = model.evaluate( X_train, Y_train, verbose=0 )
+	for i in range(1,len(model.metrics_names)):
+		print( model.metrics_names[i] + ' : ', eva[i] )
+
+	print()
+
+	print( 'test data:' )
+	eva = model.evaluate( X_test, Y_test, verbose=0 )
+	for i in range(1,len(model.metrics_names)):
+		print( model.metrics_names[i] + ' : ', eva[i] )
