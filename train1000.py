@@ -12,8 +12,8 @@ def extract( x_src, y_src, nb_per_class ):
 	nb_classes = y_src.shape[1]
 	nb_data = nb_classes * nb_per_class
 	
-	x_dst = np.zeros( ( nb_data,) + x_src.shape[1:] )
-	y_dst = np.zeros( ( nb_data,) + y_src.shape[1:] )
+	x_dst = np.zeros( ( nb_data,) + x_src.shape[1:], dtype=np.float32 )
+	y_dst = np.zeros( ( nb_data,) + y_src.shape[1:], dtype=np.float32 )
 	
 	nb = [0] * nb_classes
 	
