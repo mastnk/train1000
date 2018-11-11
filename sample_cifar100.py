@@ -34,16 +34,16 @@ if( __name__ == '__main__' ):
 	(X_train, Y_train), (X_test, Y_test) = train1000.cifar100()
 	nb_classes = 100
 	
-	if( not os.path.exists( title + '.hdf5' ) ):
-		model = cifar.build_model( nb_classes=nb_classes, Wl20=1E-6, dr0=0.5, nb_features0=1024 )
-		model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['categorical_crossentropy', 'accuracy'])
+	model = cifar.build_model( nb_classes=nb_classes, Wl20=1E-6, dr0=0.5, nb_features0=1024 )
+	model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['categorical_crossentropy', 'accuracy'])
 
+	if( not os.path.exists( title + '.hdf5' ) ):
 		gen = cifar.build_generator( X_train, Y_train, batch_size )
 
 		callbacks = [ModelCheckpoint(title + '.hdf5', monitor='val_categorical_crossentropy', verbose=1, save_best_only=True, mode='min'), CSVLogger(title+'.csv')]
 		model.fit_generator( gen, steps_per_epoch=steps_per_epoch, epochs=epochs, verbose=1, callbacks=callbacks, validation_data=(X_train, Y_train) )
 	
-	model = load_model( title + '.hdf5', custom_objects = activation.custom_objects )
+	model.load_weights( title + '.hdf5' )
 	
 	print( 'train data:' )
 	eva = model.evaluate( X_train, Y_train, verbose=0 )
