@@ -124,6 +124,22 @@ categorical_crossentropy :  0.44623187800198794
 
 acc :  0.8838
 
+## wig_ensemble_mnist.py
+
+It is a sample of the train with 1000 for mnist.
+It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
+
+train data:
+
+categorical_crossentropy :  0.013662026351084933
+
+acc :  0.997
+
+test data:
+
+categorical_crossentropy :  0.48152346645389915
+
+acc :  0.9115
 
 ## sample_cifar10.py
 
