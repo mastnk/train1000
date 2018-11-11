@@ -12,7 +12,17 @@ from keras.regularizers import l2
 
 import numpy as np
 
+import os
+import sys
+
+if( not os.path.exists( 'WiG/keras/activation.py' ) ):
+	import subprocess
+	cmd = 'git clone https://github.com/mastnk/WiG'
+	subprocess.call(cmd.split())
+	
+sys.path.append('WiG/keras')
 import activation
+
 
 ##### model #####
 def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, act_func='relu', nb_classes = 10, input_shape = (28,28,1) ):

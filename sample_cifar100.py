@@ -5,6 +5,15 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 
 import sample_cifar10 as cifar
+import os
+import sys
+
+if( not os.path.exists( 'WiG/keras/activation.py' ) ):
+	import subprocess
+	cmd = 'git clone https://github.com/mastnk/WiG'
+	subprocess.call(cmd.split())
+	
+sys.path.append('WiG/keras')
 import activation
 
 if( __name__ == '__main__' ):

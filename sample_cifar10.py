@@ -13,6 +13,15 @@ from keras.regularizers import l2
 import numpy as np
 import random
 
+import os
+import sys
+
+if( not os.path.exists( 'WiG/keras/activation.py' ) ):
+	import subprocess
+	cmd = 'git clone https://github.com/mastnk/WiG'
+	subprocess.call(cmd.split())
+	
+sys.path.append('WiG/keras')
 import activation
 
 ##### model #####
