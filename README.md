@@ -114,15 +114,15 @@ It is a sample of the train with 1000 for mnist.
 
 train data:
 
-categorical_crossentropy :  0.14676558482646943
+categorical_crossentropy :  3.658007077547154e-07
 
-acc :  0.953
+acc :  1.0
 
 test data:
 
-categorical_crossentropy :  0.44623187800198794
+categorical_crossentropy :  0.4975750187593636
 
-acc :  0.8838
+acc :  0.9364
 
 ## wig_ensemble_mnist.py
 
@@ -131,15 +131,16 @@ It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activat
 
 train data:
 
-categorical_crossentropy :  0.013662026351084933
+categorical_crossentropy :  0.14985885500907897
 
-acc :  0.997
+acc :  0.992
 
 test data:
 
-categorical_crossentropy :  0.48152346645389915
+categorical_crossentropy :  0.28974959580898285
 
-acc :  0.9115
+acc :  0.9458
+
 
 ## sample_cifar10.py
 

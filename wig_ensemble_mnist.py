@@ -25,7 +25,7 @@ import activation
 
 
 ##### model #####
-def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes = 10, input_shape = (28,28,1), nb_layers_weight = 0, nb_features_weight=None):
+def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes = 10, input_shape = (28,28,1), nb_layers_weight = 0):
 	inp = Input(shape=input_shape)
 	x0 = Flatten() (inp)
 	x = x0
@@ -52,28 +52,7 @@ def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes 
 			y = Dropout(dropout) (y)
 		yy.append(y)
 	
-	if( nb_layers_weight > 0 ):
-		if( nb_features_weight == None ):
-			nb_features_weight = nb_features
-		
-		x = x0
-		for i in range(nb_layers_weight-1):
-			y = Dense( nb_features_weight, kernel_initializer='he_normal', kernel_regularizer=l2(Wl2) ) (x)
-			m = Dense( nb_features_weight, kernel_initializer='zeros', activation='sigmoid' ) (x)
-			x = Multiply() ([m,y])
-		
-		y = Dense( nb_layers+1, kernel_initializer='zeros', kernel_regularizer=l2(Wl2), use_bias=False ) (x)
-		m = Dense( nb_layers+1, kernel_initializer='zeros', activation='sigmoid' ) (x)
-		y = Multiply() ([m,y])
-		w = Activation('softmax')(y)
-		
-		for i in range(nb_layers+1):
-			wy = Lambda( lambda w: w[:,i:i+1], lambda s: (s[0], nb_classes) ) (w)
-			yy[i] = Multiply() ( [wy, yy[i]] )
-		y = Add() (yy)
-
-	else:
-		y = Average() (yy)
+	y = Average() (yy)
 	
 	y = Activation('softmax')(y)
 	return Model(inputs=inp, outputs=y)
@@ -81,7 +60,7 @@ def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes 
 ##### generator #####
 def build_generator( X_train, Y_train, batch_size, gen = None ):
 	if( gen == None ):
-		gen = ImageDataGenerator(width_shift_range=0.5, height_shift_range=0.5, zoom_range=[0.98, 1.02], shear_range=3.14/180*0.1)
+		gen = ImageDataGenerator(width_shift_range=2.0, height_shift_range=2.0, zoom_range=[0.9, 1.1], shear_range=3.14/180*5)
 	gen.fit(X_train)
 	flow_batch_size = batch_size
 	if( flow_batch_size > X_train.shape[0] ):
@@ -103,6 +82,26 @@ def build_generator( X_train, Y_train, batch_size, gen = None ):
 		
 		yield X, Y
 
+
+def gen_mixup( x, y, batch_size, mixup_alpha = 0.2 ):
+	_gen = build_generator( x, y, batch_size )
+	while( True ):
+		x0, y0 = _gen.__next__()
+		x1, y1 = _gen.__next__()
+		
+		L = np.random.beta( mixup_alpha, mixup_alpha, size=(batch_size,1) )
+		LX = L.reshape(batch_size, 1, 1, 1)
+		LY = L.reshape(batch_size, 1)
+		x = LX * x0 + (1-LX) * x1
+		y = LY * y0 + (1-LY) * y1
+		
+		yield x, y
+
+def np_crossentropy( y_true, y_pred ):
+	y_pred = np.clip( y_pred, K.epsilon(), 1-K.epsilon() )
+	ce = -np.sum( y_true * np.log( y_pred ), axis=1 )
+	return ce
+
 if( __name__ == '__main__' ):
 	from keras.callbacks import CSVLogger, ModelCheckpoint
 	from keras.optimizers import Adam
@@ -116,10 +115,11 @@ if( __name__ == '__main__' ):
 	epochs = 100
 	steps_per_epoch = 100
 	
-	batch_size = 1100
+	batch_size = 1000
 	
-	nb_layers = 3
-	nb_layers_weight = 2
+	nb_layers = 1
+	nb_layers_weight = 0
+
 	nb_features = 128
 	dropout = 0.5
 	Wl2 = 1E-6
@@ -127,17 +127,18 @@ if( __name__ == '__main__' ):
 	(X_train, Y_train), (X_test, Y_test) = train1000.mnist()
 	
 	model = build_model( nb_layers = nb_layers, dropout = dropout, nb_features = nb_features, Wl2=Wl2, nb_layers_weight=nb_layers_weight )
-	model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=['categorical_crossentropy', 'accuracy'])
+	opt = Adam(decay=1.0/(epochs*steps_per_epoch))
+	model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['categorical_crossentropy', 'accuracy'])
 	
 	if( not os.path.exists( title+'.hdf5' ) ):
-		gen = build_generator( X_train, Y_train, batch_size )
+		gen = gen_mixup( X_train, Y_train, batch_size, batch_size )
 
 		flog = open( title+'.csv', 'w' )
 
 		line = 'epoch, categorical_crossentropy, accuracy, val_categorical_crossentropy, val_accuracy, save'
 		print( line )
 		flog.write( line+'\n' )
-		flog.flush()		
+		flog.flush()
 	
 		min_crossentropy = None
 		for epoch in range(epochs):

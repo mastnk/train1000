@@ -42,7 +42,7 @@ def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, act_func='r
 ##### generator #####
 def build_generator( X_train, Y_train, batch_size, gen = None ):
 	if( gen == None ):
-		gen = ImageDataGenerator(width_shift_range=0.5, height_shift_range=0.5, zoom_range=[0.98, 1.02], shear_range=3.14/180*0.1)
+		gen = ImageDataGenerator(width_shift_range=2, height_shift_range=2, zoom_range=[0.9, 1.1], shear_range=3.14/180*5)
 	gen.fit(X_train)
 	flow = gen.flow(X_train, Y_train, batch_size=batch_size)
 	while(True):
