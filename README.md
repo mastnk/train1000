@@ -124,7 +124,7 @@ categorical_crossentropy :  0.4975750187593636
 
 acc :  0.9364
 
-## wig_ensemble_mnist.py
+## wig\_ensemble\_mnist.py
 
 It is a sample of the train with 1000 for mnist.
 It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
@@ -142,7 +142,7 @@ categorical_crossentropy :  0.28974959580898285
 acc :  0.9458
 
 
-## sample_cifar10.py
+## sample\_cifar10.py
 
 It is a sample of the train with 1000 for cifar10.
 
@@ -159,7 +159,27 @@ categorical_crossentropy :  1.6783598587036133
 acc :  0.517
 
 
-## sample_cifar100.py
+## wig\_ensemble\_cifar.py 10
+
+It is a sample of the train with 1000 for cifar10 and cifar100.
+It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
+
+This results are for cifar10.
+
+train data:
+
+categorical_crossentropy :  0.1766895472407341
+
+acc :  0.975
+
+test data:
+
+categorical_crossentropy :  1.5016545400619508
+
+acc :  0.5295
+
+
+## sample\_cifar100.py
 
 It is a sample of the train with 1000 for cifar100.
 
@@ -174,6 +194,25 @@ test data:
 categorical_crossentropy :  6.621670350646973
 
 acc :  0.0967
+
+## wig\_ensemble\_cifar.py 10
+
+It is a sample of the train with 1000 for cifar10 and cifar100.
+It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
+
+This results are for cifar100.
+
+train data:
+
+categorical_crossentropy :  0.1554114396572113
+
+acc :  0.969
+
+test data:
+
+categorical_crossentropy :  4.5485525192260745
+
+acc :  0.1676
 
 ## Project page
 The project page is [here](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/train1000/).

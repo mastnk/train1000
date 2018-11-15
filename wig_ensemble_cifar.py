@@ -5,7 +5,7 @@ from keras import backend as K
 K.set_image_data_format('channels_last')
 
 from keras.models import Model
-from keras.layers import Flatten, Dense, Dropout, Add, Average, Multiply, Input, Activation, Lambda
+from keras.layers import Flatten, Conv2D, Dropout, Average, Multiply, Input, Activation, Lambda, GlobalAveragePooling2D
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras.regularizers import l2
@@ -25,31 +25,25 @@ import activation
 
 
 ##### model #####
-def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes = 10, input_shape = (28,28,1) ):
+def build_model( nb_layers = 3, dropout = 0, nb_features=64, Wl2=0, nb_classes = 10, input_shape = (32,32,3) ):
 	inp = Input(shape=input_shape)
-	x0 = Flatten() (inp)
-	x = x0
+	x = inp
 	
 	yy = []
-	y = Dense( nb_classes, kernel_initializer='zeros', kernel_regularizer=l2(Wl2), use_bias=False ) (x)
-	m = Dense( nb_classes, kernel_initializer='zeros', activation='sigmoid' ) (x)
-	y = Multiply() ([m,y])
-
-	if( dropout > 0 ):
-		y = Dropout(dropout) (y)
-	yy.append(y)
-	
 	for i in range(nb_layers):
-		y = Dense( nb_features, kernel_initializer='he_normal', kernel_regularizer=l2(Wl2) ) (x)
-		m = Dense( nb_features, kernel_initializer='zeros', activation='sigmoid' ) (x)
+		y = Conv2D( nb_features, (3,3), kernel_initializer='he_normal', kernel_regularizer=l2(Wl2) ) (x)
+		m = Conv2D( nb_features, (3,3), kernel_initializer='zeros', activation='sigmoid' ) (x)
 		x = Multiply() ([m,y])
 		
-		y = Dense( nb_classes, kernel_initializer='zeros', kernel_regularizer=l2(Wl2), use_bias=False ) (x)
-		m = Dense( nb_classes, kernel_initializer='zeros', activation='sigmoid' ) (x)
+		y = Conv2D( nb_classes, (3,3), kernel_initializer='zeros', kernel_regularizer=l2(Wl2), use_bias=False ) (x)
+		m = Conv2D( nb_classes, (3,3), kernel_initializer='zeros', activation='sigmoid' ) (x)
 		y = Multiply() ([m,y])
 
 		if( dropout > 0 ):
 			y = Dropout(dropout) (y)
+		
+		y = GlobalAveragePooling2D() (y)
+		
 		yy.append(y)
 	
 	y = Average() (yy)
@@ -58,19 +52,33 @@ def build_model( nb_layers = 3, dropout = 0, nb_features=256, Wl2=0, nb_classes 
 	return Model(inputs=inp, outputs=y)
 
 ##### generator #####
+def aug_color(X):
+	a = np.random.uniform( 0.95, 1.05, size=(X.shape[0],1,1,1) )
+	X *= a
+	a = np.random.uniform( 0.95, 1.05, size=(X.shape[0],1,1,1) )
+	X *= a
+		
+	a = np.random.uniform( 0.95, 1.05, size=(X.shape[0],1,1,1) )
+	b = np.random.uniform( -0.005, +0.005, size=(X.shape[0],1,1,1) )
+	X = X * a + b - (a-1.0)/2.0
+	return X
+
 def build_generator( X_train, Y_train, batch_size, gen = None ):
 	if( gen == None ):
-		gen = ImageDataGenerator(width_shift_range=2.0, height_shift_range=2.0, zoom_range=[0.9, 1.1], shear_range=3.14/180*5)
+		gen = ImageDataGenerator(width_shift_range=0.25, height_shift_range=0.25, horizontal_flip=True, rotation_range=5.0, zoom_range=[0.99, 1.05], shear_range=3.14/180)
 	gen.fit(X_train)
+	flow = gen.flow(X_train, Y_train, batch_size=batch_size)
 	flow_batch_size = batch_size
 	if( flow_batch_size > X_train.shape[0] ):
 		flow_batch_size = X_train.shape[0]
 	flow = gen.flow(X_train, Y_train, batch_size=flow_batch_size)
 	Xque, Yque = flow.__next__()
+	Xque = aug_color(Xque)
 	
 	while(True):
 		while( Xque.shape[0] < batch_size ):
 			_X, _Y = flow.__next__()
+			_X = aug_color(_X)
 			Xque = np.concatenate( (Xque, _X), axis=0 )
 			Yque = np.concatenate( (Yque, _Y), axis=0 )
 		
@@ -84,16 +92,15 @@ def build_generator( X_train, Y_train, batch_size, gen = None ):
 
 
 def gen_mixup( x, y, batch_size, mixup_alpha = 0.2 ):
-	_gen = build_generator( x, y, batch_size )
+	_gen = build_generator( x, y, 2*batch_size )
 	while( True ):
-		x0, y0 = _gen.__next__()
-		x1, y1 = _gen.__next__()
+		x, y = _gen.__next__()
 		
 		L = np.random.beta( mixup_alpha, mixup_alpha, size=(batch_size,1) )
 		LX = L.reshape(batch_size, 1, 1, 1)
 		LY = L.reshape(batch_size, 1)
-		x = LX * x0 + (1-LX) * x1
-		y = LY * y0 + (1-LY) * y1
+		x = LX * x[:batch_size,:] + (1-LX) * x[batch_size:,:]
+		y = LY * y[:batch_size,:] + (1-LY) * y[batch_size:,:]
 		
 		yield x, y
 
@@ -105,22 +112,38 @@ if( __name__ == '__main__' ):
 	import os
 	import sys
 
-	title, ext = os.path.splitext(sys.argv[0])
+	def error_exit():
+		print( '!!!!! ERROR !!!!!' )
+		print( 'Usage: python {name} [10|100]'.format(name=sys.argv[0]) )
+		sys.exit()
+
+	try:
+		title, ext = os.path.splitext(sys.argv[0])
+		nb_classes = int(sys.argv[1])
+	except:
+		error_exit()
+	
+	title += '{nb_classes:d}'.format(nb_classes=nb_classes)
 
 	epochs = 100
 	steps_per_epoch = 100
 	
 	batch_size = 1000
 	
-	nb_layers = 1
+	nb_layers = 5
 
-	nb_features = 128
+	nb_features = 64
 	dropout = 0.5
 	Wl2 = 1E-6
 
-	(X_train, Y_train), (X_test, Y_test) = train1000.mnist()
+	if( nb_classes == 10 ):
+		(X_train, Y_train), (X_test, Y_test) = train1000.cifar10()
+	elif( nb_classes == 100 ):
+		(X_train, Y_train), (X_test, Y_test) = train1000.cifar100()
+	else:
+		error_exit()
 	
-	model = build_model( nb_layers = nb_layers, dropout = dropout, nb_features = nb_features, Wl2=Wl2 )
+	model = build_model( nb_classes = nb_classes, nb_layers = nb_layers, dropout = dropout, nb_features = nb_features, Wl2=Wl2 )
 	opt = Adam(decay=1.0/(epochs*steps_per_epoch))
 	model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['categorical_crossentropy', 'accuracy'])
 	
