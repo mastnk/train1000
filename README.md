@@ -195,7 +195,7 @@ categorical_crossentropy :  6.621670350646973
 
 acc :  0.0967
 
-## wig\_ensemble\_cifar.py 10
+## wig\_ensemble\_cifar.py 100
 
 It is a sample of the train with 1000 for cifar10 and cifar100.
 It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
