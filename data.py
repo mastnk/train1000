@@ -25,6 +25,23 @@ def mnist():
 
 	return (x_train, y_train), (x_test, y_test)
 
+def fashion_mnist():
+	(x_train, y_train), (x_test, y_test) = datasets.fashion_mnist.load_data()
+
+	x_train = x_train.astype('float32')
+	x_test = x_test.astype('float32')
+	x_train /= 255
+	x_test /= 255
+
+	y_train = np_utils.to_categorical(y_train, 10).astype('float32')
+	y_test = np_utils.to_categorical(y_test, 10).astype('float32')
+
+	x_train = x_train.reshape( x_train.shape+(1,) )
+	x_test = x_test.reshape( x_test.shape+(1,) )
+
+	return (x_train, y_train), (x_test, y_test)
+
+
 def cifar10():
 	(X_train, y_train), (X_test, y_test) = datasets.cifar10.load_data()
 	Y_train = np_utils.to_categorical(y_train, 10)
@@ -52,6 +69,22 @@ def cifar100():
 if( __name__ == '__main__' ):
 	print( 'mnist' )
 	(x_train, y_train), (x_test, y_test) = mnist()
+	print( 'dtype:' )
+	print( 'x_train:', x_train.dtype )
+	print( 'y_train:', y_train.dtype )
+	print( 'x_test:', x_test.dtype )
+	print( 'y_test:', y_test.dtype )
+	print()
+
+	print( 'shape:' )
+	print( 'x_train:', x_train.shape )
+	print( 'y_train:', y_train.shape )
+	print( 'x_test:', x_test.shape )
+	print( 'y_test:', y_test.shape )
+	print()
+	
+	print( 'fashion_mnist' )
+	(x_train, y_train), (x_test, y_test) = fashion_mnist()
 	print( 'dtype:' )
 	print( 'x_train:', x_train.dtype )
 	print( 'y_train:', y_train.dtype )

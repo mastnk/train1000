@@ -118,7 +118,11 @@ if( __name__ == '__main__' ):
 	dropout = 0.5
 	Wl2 = 1E-6
 
-	(X_train, Y_train), (X_test, Y_test) = train1000.mnist()
+	if( sys.argv[1] == 'fashion' ):
+		title += '_fashion'
+		(X_train, Y_train), (X_test, Y_test) = train1000.fashion_mnist()
+	else:
+		(X_train, Y_train), (X_test, Y_test) = train1000.mnist()		
 	
 	model = build_model( nb_layers = nb_layers, dropout = dropout, nb_features = nb_features, Wl2=Wl2 )
 	opt = Adam(decay=1.0/(epochs*steps_per_epoch))

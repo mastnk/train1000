@@ -9,9 +9,16 @@ The code uses the [Keras](https://keras.io/) framework.
 ```
 % git clone https://github.com/mastnk/train1000
 % sh get_models.sh
+
 % python sample_mnist.py
+% python sample_mnist.py fashion
 % python sample_cifar10.py
 % python sample_cifar100.py
+
+% python wig_ensemble_mnist.py
+% python wig_ensemble_mnist.py fashion
+% python wig_ensemble_cifar.py 10
+% python wig_ensemble_cifar.py 100
 ```
 
 ## get_models.sh
@@ -28,6 +35,16 @@ The values of the outputs (y) are encoded by one hot format.
 
 
 ### (x_train, y_train), (x_test, y_test) = mnist()
+
+x_train: (60000, 28, 28, 1)
+
+y_train: (60000, 10)
+
+x_test: (10000, 28, 28, 1) 
+
+y_test: (10000, 10)
+
+### (x_train, y_train), (x_test, y_test) = fashion\_mnist()
 
 x_train: (60000, 28, 28, 1)
 
@@ -67,6 +84,18 @@ The values of the inputs (x) are normalized to [0,1].
 The values of the outputs (y) are encoded by one hot format.
 
 ### (x_train, y_train), (x_test, y_test) = mnist()
+
+100 samples for each classes
+
+x_train: (1000, 28, 28, 1)
+
+y_train: (1000, 10)
+
+x_test: (60000, 28, 28, 1) 
+
+y_test: (60000, 10)
+
+### (x_train, y_train), (x_test, y_test) = fashion_mnist()
 
 100 samples for each classes
 
@@ -140,6 +169,39 @@ test data:
 categorical_crossentropy :  0.28974959580898285
 
 acc :  0.9458
+
+## sample_mnist.py fashion
+
+It is a sample of the train with 1000 for fashion_mnist.
+
+train data:
+
+categorical_crossentropy :  0.0023859963628055994
+
+acc :  1.0
+
+test data:
+
+categorical_crossentropy :  1.324873540878296
+
+acc :  0.8152
+
+## wig\_ensemble\_mnist.py fashion
+
+It is a sample of the train with 1000 for fashion_mnist.
+It is used the [WiG](http://www.ok.sc.e.titech.ac.jp/~mtanaka/proj/WiG/) activation function.
+
+train data:
+
+categorical_crossentropy :  0.3281301665306091
+
+acc :  0.934
+
+test data:
+
+categorical_crossentropy :  0.5748806499958038
+
+acc :  0.8159
 
 
 ## sample\_cifar10.py

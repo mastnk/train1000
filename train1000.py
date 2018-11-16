@@ -36,6 +36,12 @@ def mnist():
 	(X_train, Y_train) = extract( X_train, Y_train, nb_per_class )
 	return (X_train, Y_train), (X_test, Y_test)
 
+def fashion_mnist():
+	nb_per_class = 100
+	(X_train, Y_train), (X_test, Y_test) = data.fashion_mnist()
+	(X_train, Y_train) = extract( X_train, Y_train, nb_per_class )
+	return (X_train, Y_train), (X_test, Y_test)
+
 def cifar10():
 	nb_per_class = 100
 	(X_train, Y_train), (X_test, Y_test) = data.cifar10()
@@ -52,6 +58,22 @@ def cifar100():
 if( __name__ == '__main__' ):
 	print( 'mnist' )
 	(x_train, y_train), (x_test, y_test) = mnist()
+	print( 'dtype:' )
+	print( 'x_train:', x_train.dtype )
+	print( 'y_train:', y_train.dtype )
+	print( 'x_test:', x_test.dtype )
+	print( 'y_test:', y_test.dtype )
+	print()
+
+	print( 'shape:' )
+	print( 'x_train:', x_train.shape )
+	print( 'y_train:', y_train.shape )
+	print( 'x_test:', x_test.shape )
+	print( 'y_test:', y_test.shape )
+	print()
+	
+	print( 'fashion_mnist' )
+	(x_train, y_train), (x_test, y_test) = fashion_mnist()
 	print( 'dtype:' )
 	print( 'x_train:', x_train.dtype )
 	print( 'y_train:', y_train.dtype )
