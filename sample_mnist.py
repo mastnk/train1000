@@ -71,7 +71,7 @@ if( __name__ == '__main__' ):
 	dropout = 0.5
 	Wl2 = 1E-6
 
-	if( sys.argv[1] == 'fashion' ):
+	if( len(sys.argv) > 2 and sys.argv[1] == 'fashion' ):
 		title += '_fashion'
 		(X_train, Y_train), (X_test, Y_test) = train1000.fashion_mnist()
 	else:
